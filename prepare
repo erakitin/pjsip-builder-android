@@ -1,0 +1,61 @@
+#!/bin/bash -e
+
+. config.conf
+
+BASEDIR=$(pwd)
+
+if [ "$DOWNLOAD_PJSIP" == "1" ]
+then
+    echo "Downloading PJSIP ..."
+    cd "${BASEDIR}"
+    curl -L -# -o pjsip.tar.bz2 "$PJSIP_DOWNLOAD_URL" 2>&1
+    rm -rf "$PJSIP_DIR_NAME"
+    echo "PJSIP downloaded!"
+    echo "Extracting PJSIP ..."
+    tar xjf pjsip.tar.bz2 && rm -rf pjsip.tar.bz2
+
+    #sed -i 's/NDK_TOOLCHAIN_VERSION=4.8\NDK_TOOLCHAIN_VERSION=4.9/g' "${BASEDIR}/${PJSIP_DIR_NAME}/configure-android"
+fi
+
+if [ "$DOWNLOAD_SWIG" == "1" ]
+then
+    echo "Downloading SWIG ..."
+    cd "${BASEDIR}"
+    curl -L -# -o swig.tar.gz "$SWIG_DOWNLOAD_URL" 2>&1
+    rm -rf "$SWIG_DIR_NAME"
+    echo "SWIG downloaded!"
+    echo "Extracting SWIG ..."
+    tar xzf swig.tar.gz && rm -rf swig.tar.gz
+    cd "$SWIG_DIR_NAME"
+    ./configure
+    make && sudo make install
+    cd ..
+    rm -rf "$SWIG_DIR_NAME"
+fi
+
+if [ "$DOWNLOAD_OPUS" == "1" ]
+then
+    echo "Downloading OPUS ..."
+    cd "${BASEDIR}"
+    curl -L -# -o opus.tar.bz2 "$OPUS_DOWNLOAD_URL" 2>&1
+    rm -rf "$OPUS_DIR_NAME"
+    echo "OPUS downloaded!"
+    echo "Extracting OPUS ..."
+    tar xjf opus.tar.bz2 && rm -rf opus.tar.bz2
+    ./opus-build
+fi
+
+if [ "$DOWNLOAD_OPENSSL" == "1" ]
+then
+    echo "Downloading OpenSSL ..."
+    cd "${BASEDIR}"
+    curl -L -# -o openssl.tar.gz "$OPENSSL_DOWNLOAD_URL" 2>&1
+    rm -rf "$OPENSSL_DIR_NAME"
+    echo "OpenSSL downloaded!"
+    echo "Extracting OpenSSL ..."
+    tar xzf openssl.tar.gz && rm -rf openssl.tar.gz
+    cd ${BASEDIR}
+    ./openssl-build-target-archs
+fi
+
+echo "The build system is ready! Execute: ./build to build PJSIP :)"
