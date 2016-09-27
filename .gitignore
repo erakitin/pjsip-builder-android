@@ -1,0 +1,12 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!Android.mk
+!build
+!config.conf
+!openssl-build
+!openssl-build-target-archs
+!opus-build
+!prepare
