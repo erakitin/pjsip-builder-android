@@ -10,3 +10,4 @@
 !openssl-build-target-archs
 !opus-build
 !prepare
+!bitrate.patch

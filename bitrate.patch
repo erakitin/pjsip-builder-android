@@ -1,0 +1,140 @@
+diff --git a/pjsip/include/pjsua2/call.hpp b/pjsip/include/pjsua2/call.hpp
+index 17f9f23..ee105c7 100644
+--- a/pjsip/include/pjsua2/call.hpp
++++ b/pjsip/include/pjsua2/call.hpp
+@@ -1505,7 +1505,16 @@ public:
+      * @return              The stream statistic.
+      */
+     StreamStat getStreamStat(unsigned med_idx) const throw(Error);
+-    
++
++    /**
++     * Set Opus codec bitrate.
++     *
++     * @param bitrate       Bitrate in bps.
++     *
++     * @return              True if success.
++     */
++    bool setOpusBitrate(int bitrate);
++
+     /**
+      * Get media transport info for the specified media index.
+      *
+diff --git a/pjsip/src/pjsua2/call.cpp b/pjsip/src/pjsua2/call.cpp
+index 2d88990..b8987c2 100644
+--- a/pjsip/src/pjsua2/call.cpp
++++ b/pjsip/src/pjsua2/call.cpp
+@@ -19,9 +19,13 @@
+ #include <pjsua2/account.hpp>
+ #include <pjsua2/call.hpp>
+ #include <pjsua2/endpoint.hpp>
++#include <pjmedia-codec/opus.h>
++#include <pjmedia-codec/libopus/opus.h>
+ #include <pj/ctype.h>
+ #include "util.hpp"
+ 
++#include <pjsua-lib/pjsua_internal.h>   /* For retrieving pjsua threads */
++
+ using namespace pj;
+ using namespace std;
+ 
+@@ -31,6 +35,26 @@ using namespace std;
+ 
+ #define SDP_BUFFER_SIZE 1024
+ 
++struct pjmedia_stream
++{
++    pjmedia_endpt	    *endpt;	    /**< Media endpoint.	    */
++    pjmedia_codec_mgr	    *codec_mgr;	    /**< Codec manager instance.    */
++    pjmedia_stream_info	     si;	    /**< Creation parameter.        */
++    pjmedia_port	     port;	    /**< Port interface.	    */
++    pjmedia_channel	    *enc;	    /**< Encoding channel.	    */
++    pjmedia_channel	    *dec;	    /**< Decoding channel.	    */
++
++    pj_pool_t		    *own_pool;	    /**< Only created if not given  */
++
++    pjmedia_dir		     dir;	    /**< Stream direction.	    */
++    void		    *user_data;	    /**< User data.		    */
++    pj_str_t		     cname;	    /**< SDES CNAME		    */
++
++    pjmedia_transport	    *transport;	    /**< Stream transport.	    */
++
++    pjmedia_codec	    *codec;	    /**< Codec instance being used. */
++};
++
+ MathStat::MathStat()
+ : n(0), max(0), min(0), last(0), mean(0)
+ {
+@@ -658,6 +682,72 @@ StreamStat Call::getStreamStat(unsigned med_idx) const throw(Error)
+     return ss;
+ }
+ 
++bool Call::setOpusBitrate(int bitrate)
++{
++    PJ_LOG(1, (THIS_FILE, "Setting opus bitrate = %d", bitrate));
++
++    pjsua_call *p_call;
++    pjsip_dialog *dlg;
++
++    acquire_call("hello", id, &p_call, &dlg);
++
++    if (p_call == 0) {
++        PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (p_call == 0)"));
++        return false;
++    }
++
++    pjsua_call_media call_media;
++    call_media = p_call->media[0];
++
++    //if (call_media == 0) {
++    //    PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (call_media == 0)"));
++    //    return false;
++    //}
++
++    pjmedia_stream *stream;
++
++    stream = call_media.strm.a.stream;
++
++    if (stream == 0) {
++        PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (stream == 0)"));
++        return false;
++    }
++
++    pjmedia_codec *codec;
++    codec = stream->codec;
++
++    if (codec == 0) {
++        PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (codec == 0)"));
++        return false;
++    }
++
++    struct opus_data
++    {
++        pj_pool_t                   *pool;
++        pj_mutex_t                  *mutex;
++        OpusEncoder                 *enc;
++        OpusDecoder                 *dec;
++        OpusRepacketizer            *enc_packer;
++        OpusRepacketizer            *dec_packer;
++        pjmedia_codec_opus_config    cfg;
++        unsigned                     ptime;
++        pjmedia_frame                dec_frame[2];
++        int                          dec_frame_index;
++    };
++
++    struct opus_data *opus_data = (struct opus_data *) codec->codec_data;
++
++    if (opus_data == 0) {
++        PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (codec == 0)"));
++            return false;
++    }
++
++    opus_encoder_ctl(opus_data->enc, OPUS_SET_BITRATE(bitrate));
++
++    PJ_LOG(1, (THIS_FILE, "Setting opus bitrate SUCCESS"));
++    return true;
++}
++
+ MediaTransportInfo Call::getMedTransportInfo(unsigned med_idx) const
+     throw(Error)
+ {

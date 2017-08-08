@@ -14,6 +14,7 @@ PJSUA_GENERATED_SO_PATH="${PJSUA_BASE_DIR}/java/android/app/src/main/jniLibs/arm
 FINAL_BUILD_DIR="${BASE_FOLDER}/pjsip-build"
 FINAL_BUILD_LIB="${FINAL_BUILD_DIR}/lib"
 FINAL_BUILD_LOGS="${FINAL_BUILD_DIR}/logs"
+LIBOPUS_PATH="${PJSIP_BASE_PATH}/pjmedia/include/pjmedia-codec/libopus"
 
 export ANDROID_NDK_ROOT="${NDK_PATH}"
 export PATH="$ANDROID_NDK_ROOT:$PATH"
@@ -36,6 +37,7 @@ cat <<EOF > "$CONFIG_SITE_PATH"
 #define PJMEDIA_AUDIO_DEV_HAS_ANDROID_JNI 1
 #define PJMEDIA_AUDIO_DEV_HAS_OPENSL 0	
 #define PJSIP_TRANSPORT_IDLE_TIME 60000
+#define PJSIP_TD_TIMEOUT 3200000
 EOF
 
 for arch in "${TARGET_ARCHS[@]}"
@@ -46,6 +48,10 @@ do
     cd "${PJSIP_BASE_PATH}"
     cp -r * "${PJSIP_TMP_PATH}"
     cd "${PJSIP_TMP_PATH}"
+
+    rm -rf "${LIBOPUS_PATH}"
+    mkdir -p "${LIBOPUS_PATH}"
+    cp -r "${OPUS_BUILD_OUT_PATH}/${arch}/include/opus/." "${LIBOPUS_PATH}"
 
     APP_PLATFORM=android-${TARGET_ANDROID_API} NDK_TOOLCHAIN_VERSION=4.9 TARGET_ABI=$arch ./configure-android --use-ndk-cflags \
                                          --with-ssl="${OPENSSL_BUILD_OUT_PATH}/libs/${arch}" \

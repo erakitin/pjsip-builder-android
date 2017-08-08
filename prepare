@@ -6,13 +6,16 @@ BASEDIR=$(pwd)
 
 if [ "$DOWNLOAD_PJSIP" == "1" ]
 then
-    echo "Downloading PJSIP ..."
+    echo "Cloning PJSIP ..."
     cd "${BASEDIR}"
-    curl -L -# -o pjsip.tar.bz2 "$PJSIP_DOWNLOAD_URL" 2>&1
     rm -rf "$PJSIP_DIR_NAME"
-    echo "PJSIP downloaded!"
-    echo "Extracting PJSIP ..."
-    tar xjf pjsip.tar.bz2 && rm -rf pjsip.tar.bz2
+    git clone --depth 1 --single-branch --branch "$PJSIP_VERSION" https://github.com/pjsip/pjproject.git "$PJSIP_DIR_NAME"
+    echo "PJSIP cloned!"
+    echo "Applying patch ..."
+    cd $PJSIP_DIR_NAME
+    git apply "../bitrate.patch"
+    echo "The patch applied!"
+    cd ..
 
     #sed -i 's/NDK_TOOLCHAIN_VERSION=4.8\NDK_TOOLCHAIN_VERSION=4.9/g' "${BASEDIR}/${PJSIP_DIR_NAME}/configure-android"
 fi
