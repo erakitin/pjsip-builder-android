@@ -21,7 +21,7 @@ index 17f9f23..ee105c7 100644
       * Get media transport info for the specified media index.
       *
 diff --git a/pjsip/src/pjsua2/call.cpp b/pjsip/src/pjsua2/call.cpp
-index 2d88990..b8987c2 100644
+index 2d88990..e8a1990 100644
 --- a/pjsip/src/pjsua2/call.cpp
 +++ b/pjsip/src/pjsua2/call.cpp
 @@ -19,9 +19,13 @@
@@ -65,7 +65,7 @@ index 2d88990..b8987c2 100644
  MathStat::MathStat()
  : n(0), max(0), min(0), last(0), mean(0)
  {
-@@ -658,6 +682,72 @@ StreamStat Call::getStreamStat(unsigned med_idx) const throw(Error)
+@@ -658,6 +682,78 @@ StreamStat Call::getStreamStat(unsigned med_idx) const throw(Error)
      return ss;
  }
  
@@ -80,6 +80,7 @@ index 2d88990..b8987c2 100644
 +
 +    if (p_call == 0) {
 +        PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (p_call == 0)"));
++        if (dlg) pjsip_dlg_dec_lock(dlg);
 +        return false;
 +    }
 +
@@ -97,6 +98,7 @@ index 2d88990..b8987c2 100644
 +
 +    if (stream == 0) {
 +        PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (stream == 0)"));
++        if (dlg) pjsip_dlg_dec_lock(dlg);
 +        return false;
 +    }
 +
@@ -105,6 +107,7 @@ index 2d88990..b8987c2 100644
 +
 +    if (codec == 0) {
 +        PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (codec == 0)"));
++        if (dlg) pjsip_dlg_dec_lock(dlg);
 +        return false;
 +    }
 +
@@ -126,12 +129,15 @@ index 2d88990..b8987c2 100644
 +
 +    if (opus_data == 0) {
 +        PJ_LOG(1, (THIS_FILE, "Setting opus bitrate FAILED (codec == 0)"));
-+            return false;
++        if (dlg) pjsip_dlg_dec_lock(dlg);
++        return false;
 +    }
 +
 +    opus_encoder_ctl(opus_data->enc, OPUS_SET_BITRATE(bitrate));
 +
 +    PJ_LOG(1, (THIS_FILE, "Setting opus bitrate SUCCESS"));
++
++    if (dlg) pjsip_dlg_dec_lock(dlg);
 +    return true;
 +}
 +
