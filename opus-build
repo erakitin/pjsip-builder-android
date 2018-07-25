@@ -6,6 +6,7 @@ echo "Building opus..."
 
 mkdir -p "${OPUS_DIR_NAME}/jni"
 cp -r Android.mk "${OPUS_DIR_NAME}/jni/Android.mk"
+cp -r Application.mk "${OPUS_DIR_NAME}/jni/Application.mk"
 cd "$OPUS_DIR_NAME"
 "${NDK_PATH}/ndk-build"
 cd ..
